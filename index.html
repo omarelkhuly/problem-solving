@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>جدول أسبوعي للتعامل مع التوتر</title>
+    <link rel="icon" href="images/favicon.png" type="image/png">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8ec5fc">
+    <style>
+        body {
+            background: linear-gradient(135deg, #8ec5fc, #e0c3fc);
+            background-size: 400% 400%;
+            animation: gradientBG 10s ease infinite;
+            min-height: 100vh;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <div class="container py-4 bg-white rounded shadow">
+        <h2 class="text-center fw-bold mb-3">
+            <i class="fas fa-brain text-primary"></i> جدول أسبوعي للتعامل مع التوتر
+        </h2>
+        <p class="text-center mb-4" id="dateTime"></p>
+
+        <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle" id="stressTable">
+                <thead class="table-primary">
+                    <tr>
+                        <th>اليوم</th>
+                        <th><i class="fas fa-book-open"></i> الموضوع</th>
+                        <th><i class="fas fa-bullseye"></i> الهدف</th>
+                        <th><i class="fas fa-lightbulb"></i> فكرة الحل</th>
+                        <th><i class="fas fa-clock"></i> المدة</th>
+                        <th><i class="fas fa-check-circle"></i> تم الإنجاز؟</th>
+                        <th><i class="fas fa-note-sticky"></i> الملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-success" onclick="saveWeekData()"><i class="fas fa-save"></i> حفظ الأسبوع</button>
+            <button class="btn btn-info" onclick="showResults()"><i class="fas fa-chart-line"></i> عرض النتائج</button>
+            <button class="btn btn-danger" onclick="newWeek()"><i class="fas fa-sync"></i> بدء أسبوع جديد</button>
+            <button id="installBtn" class="btn btn-warning d-none mt-3"><i class="fas fa-download"></i> أضف إلى الشاشة
+                الرئيسية</button>
+        </div>
+
+        <div class="mt-4" id="resultSection"></div>
+        <div class="mt-4" id="reportsSection"></div>
+    </div>
+
+    <script>
+        const weekData = [
+            { day: "السبت", topic: "فهم التوتر", goal: "معرفة أسبابه", idea: "ابحث عن فيديو عن التوتر", duration: "30 دقيقة", ideaDetails: "ابحث عن فيديو يشرح التوتر وتأثيره. دون الملاحظات." },
+            { day: "الأحد", topic: "تحليل التوتر", goal: "تحديد مسبباته", idea: "اكتب أسبابك", duration: "20 دقيقة", ideaDetails: "اكتب أسباب التوتر في ورقة وقيم حالتك." },
+            { day: "الاثنين", topic: "تمارين تنفس", goal: "خفض التوتر", idea: "تطبيق تقنية 4-7-8", duration: "30 دقيقة", ideaDetails: "شهيق 4 ثوان، حبس نفس 7، زفير 8، كرر 4 مرات." },
+            { day: "الثلاثاء", topic: "التأمل", goal: "الهدوء الذهني", idea: "استخدم تطبيق تأمل", duration: "10 دقائق", ideaDetails: "تطبيقات مثل Headspace تساعدك على التأمل." },
+            { day: "الأربعاء", topic: "حديث إيجابي", goal: "رفع المعنويات", idea: "اكتب عبارات تحفيزية", duration: "10 دقائق", ideaDetails: "اكتب وردد عبارات إيجابية أمام المرآة." },
+            { day: "الخميس", topic: "محاكاة اختبار", goal: "التحكم بالقلق", idea: "تمرن على أسئلة", duration: "30 دقيقة", ideaDetails: "جاوب على أسئلة كأنك في الامتحان." },
+            { day: "الجمعة", topic: "مراجعة الأسبوع", goal: "قياس التقدم", idea: "اكتب ما تعلمته", duration: "20 دقيقة", ideaDetails: "قيم ما أنجزته واكتب ملاحظاتك للتطوير." }
+        ];
+
+        function loadTable() {
+            const tbody = document.getElementById("stressTable").getElementsByTagName("tbody")[0];
+            tbody.innerHTML = "";
+            for (let i = 0; i < weekData.length; i++) {
+                const row = weekData[i];
+                tbody.innerHTML += `
+        <tr>
+          <td>${row.day}</td>
+          <td>${row.topic}</td>
+          <td>${row.goal}</td>
+          <td>
+            <button class="btn btn-link text-primary p-0"
+              onclick="showIdeaDetails(this)" data-details="${row.ideaDetails.replace(/"/g, '&quot;')}">
+              <i class="fas fa-lightbulb"></i> ${row.idea}
+            </button>
+          </td>
+          <td>${row.duration}</td>
+          <td><input type="checkbox" class="form-check-input"></td>
+          <td><input type="text" class="form-control" placeholder="ملاحظاتك هنا"></td>
+        </tr>`;
+            }
+        }
+
+        function showIdeaDetails(btn) {
+            alert(btn.getAttribute("data-details"));
+        }
+
+        function saveWeekData() {
+            const rows = document.getElementById("stressTable").getElementsByTagName("tbody")[0].rows;
+            const result = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const inputs = rows[i].getElementsByTagName("input");
+                result.push({
+                    day: weekData[i].day,
+                    goal: weekData[i].goal,
+                    idea: weekData[i].idea,
+                    done: inputs[0].checked,
+                    note: inputs[1].value
+                });
+            }
+
+            localStorage.setItem("weekProgress", JSON.stringify(result));
+            alert("✅ تم حفظ بيانات الأسبوع");
+        }
+
+        function showResults() {
+            const result = JSON.parse(localStorage.getItem("weekProgress"));
+            if (!result) return alert("لا توجد بيانات محفوظة بعد.");
+
+            let html = `<div class="alert alert-info"><strong>نتائج الأسبوع:</strong><ul>`;
+            for (let i = 0; i < result.length; i++) {
+                html += `<li><strong>${result[i].day}</strong>: ${result[i].done ? '✅ تم' : '❌ لم يُنجز'} — ملاحظات: ${result[i].note || 'لا شيء'}</li>`;
+            }
+            html += `</ul></div>`;
+            document.getElementById("resultSection").innerHTML = html;
+        }
+
+        function newWeek() {
+            const result = JSON.parse(localStorage.getItem("weekProgress"));
+            if (result) {
+                let html = `<div class="border rounded p-3 mb-4 bg-white">
+          <h5 class="fw-bold"><i class="fas fa-table text-secondary"></i> تقرير الأسبوع السابق:</h5>
+          <button class="btn btn-outline-dark mb-3" onclick="downloadLastReportPDF(this)">
+            <i class="fas fa-file-pdf"></i> تحميل التقرير PDF
+          </button>
+          <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle mt-2">
+              <thead class="table-secondary"><tr>
+                <th>اليوم</th><th>الهدف</th><th>فكرة الحل</th><th>الإنجاز</th><th>الملاحظات</th>
+              </tr></thead><tbody>`;
+                for (let i = 0; i < result.length; i++) {
+                    html += `<tr>
+              <td>${result[i].day}</td>
+              <td>${result[i].goal}</td>
+              <td>${result[i].idea}</td>
+              <td>${result[i].done ? '✅' : '❌'}</td>
+              <td>${result[i].note || '-'}</td>
+            </tr>`;
+                }
+                html += `</tbody></table></div></div>`;
+                document.getElementById("reportsSection").innerHTML += html;
+            }
+
+            localStorage.removeItem("weekProgress");
+            document.getElementById("resultSection").innerHTML = "";
+            loadTable();
+        }
+
+        function downloadLastReportPDF(btn) {
+            const reportDiv = btn.nextElementSibling;
+            const doc = new jspdf.jsPDF('p', 'pt', 'a4');
+            doc.html(reportDiv, {
+                callback: function (doc) {
+                    doc.save("تقرير_الأسبوع.pdf");
+                },
+                margin: [20, 20, 20, 20],
+                autoPaging: 'text',
+                x: 10,
+                y: 10
+            });
+        }
+
+        function showDateTime() {
+            const date = new Date();
+            const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+            const day = days[date.getDay()];
+            const month = months[date.getMonth()];
+            const time = date.toLocaleTimeString('ar-EG');
+            const fullDate = `${day} ${date.getDate()} ${month} ${date.getFullYear()} - ${time}`;
+            document.getElementById("dateTime").textContent = fullDate;
+        }
+
+        // PWA: زر الإضافة للشاشة الرئيسية
+        let deferredPrompt;
+        const installBtn = document.getElementById("installBtn");
+
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.remove("d-none");
+        });
+
+        installBtn.addEventListener("click", () => {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(choice => {
+                if (choice.outcome === "accepted") {
+                    console.log("✅ تمت إضافة التطبيق");
+                }
+                deferredPrompt = null;
+                installBtn.classList.add("d-none");
+            });
+        });
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(() => console.log('✅ Service Worker Registered'))
+                .catch(err => console.error('❌ SW Error', err));
+        }
+
+        loadTable();
+        showDateTime();
+        setInterval(showDateTime, 1000);
+    </script>
+</body>
+
+</html>
